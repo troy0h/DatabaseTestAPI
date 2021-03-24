@@ -1,12 +1,12 @@
 ﻿namespace DatabaseTestAPI
 {
-    public class user
+    public class User
     {
-        public string username { get; set; }
-        public string password { get; set; }
-        public string passwordConf { get; set; }
-        public string userID { get; set; }
-        public string passHash { get; set; }
-        public string salt { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string PasswordConf { get; set; }
+        public string UserID { get; set; }
+        public string PassHash { get; set; }
+        public string Salt { get; set; }
     }
 }

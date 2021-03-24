@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DatabaseTestAPI.Controllers
 {
@@ -15,25 +11,27 @@ namespace DatabaseTestAPI.Controllers
         [HttpGet]
         public string Get(string username, string password)
         {
-            user userData = new();
-            userData.username = username;
-            userData.password = password;
-            userData.userID = "";
-            userData.passHash = "";
-            userData.salt = "";
+            User userData = new();
+            userData.Username = username;
+            userData.Password = password;
+            userData.UserID = "";
+            userData.PassHash = "";
+            userData.Salt = "";
 
             if (username == "")
             {
+                Response.StatusCode = 400;
                 return "Username must be entered";
             }
             else if (password == "")
             {
+                Response.StatusCode = 400;
                 return "Password must be entered";
             }
             else
             {
                 using SqlCommand findUser = new SqlCommand($"SELECT * FROM Users WHERE Username = @UserName;", SQL.conn);
-                findUser.Parameters.Add(new SqlParameter("@UserName", userData.username));
+                findUser.Parameters.Add(new SqlParameter("@UserName", userData.Username));
                 SQL.conn.Open();
                 using SqlDataReader reader = findUser.ExecuteReader();
                 int count = reader.FieldCount;
@@ -44,37 +42,40 @@ namespace DatabaseTestAPI.Controllers
                         switch (i)
                         {
                             case 0:
-                                userData.userID = reader.GetValue(i).ToString();
+                                userData.UserID = reader.GetValue(i).ToString();
                                 break;
 
                             case 1:
                                 break;
 
                             case 2:
-                                userData.passHash = reader.GetValue(i).ToString();
+                                userData.PassHash = reader.GetValue(i).ToString();
                                 break;
 
                             case 3:
-                                userData.salt = reader.GetValue(i).ToString();
+                                userData.Salt = reader.GetValue(i).ToString();
                                 break;
                         }
                     }
                 }
                 SQL.conn.Close();
 
-                if (userData.userID == "")
+                if (userData.UserID == "")
                 {
+                    Response.StatusCode = 400;
                     return "User does not exist";
                 }
                 else
                 {
-                    password = SQL.Sha256(password + userData.salt);
-                    if (password != userData.passHash)
+                    password = SQL.Sha256(password + userData.Salt);
+                    if (password != userData.PassHash)
                     {
+                        Response.StatusCode = 400;
                         return "Password incorrect";
                     }
                     else
                     {
+                        Response.StatusCode = 200;
                         return $"User {username} successfully logged in";
                     }
                 }

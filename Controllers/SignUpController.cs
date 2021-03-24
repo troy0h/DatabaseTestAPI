@@ -1,9 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DatabaseTestAPI.Controllers
 {
@@ -15,48 +12,52 @@ namespace DatabaseTestAPI.Controllers
         [HttpPost]
         public string Post(string username, string password, string passConfirm)
         {
-            user userData = new();
-            userData.username = username;
-            userData.password = password;
-            userData.passwordConf = passConfirm;
-            userData.userID = "";
-            userData.passHash = "";
-            userData.salt = "";
+            User userData = new();
+            userData.Username = username;
+            userData.Password = password;
+            userData.PasswordConf = passConfirm;
+            userData.UserID = "";
+            userData.PassHash = "";
+            userData.Salt = "";
 
-            if (userData.username.Length > 64)
+            if (userData.Username.Length > 64)
             {
-                return "Username too long";
+                Response.StatusCode = 400;
+                return "Username is too long";
             }
-            else if (userData.username == "")
+            else if (userData.Username == "")
             {
+                Response.StatusCode = 400;
                 return "Username cannot be blank";
             }
-            else if (userData.password != passConfirm)
+            else if (userData.Password != passConfirm)
             {
+                Response.StatusCode = 400;
                 return "Password and confirmation must match";
             }
             else
             {
                 SqlCommand testUser = new SqlCommand($"SELECT * FROM Users WHERE Username = @userName;", SQL.conn);
-                testUser.Parameters.Add(new SqlParameter("@UserName", userData.username));
+                testUser.Parameters.Add(new SqlParameter("@UserName", userData.Username));
                 SQL.conn.Open();
                 object testUserResult = testUser.ExecuteScalar();
                 SQL.conn.Close();
                 if (testUserResult != null)
                 {
+                    Response.StatusCode = 400;
                     return "Username already in use";
                 }
                 else
                 {
-                    userData.salt = SQL.Random(16, false);
-                    userData.passHash = SQL.Sha256(userData.password + userData.salt);
+                    userData.Salt = SQL.Random(16, false);
+                    userData.PassHash = SQL.Sha256(userData.Password + userData.Salt);
 
                     bool idUnique = true;
                     while (idUnique == true)
                     {
-                        userData.userID = SQL.Random(12, true);
+                        userData.UserID = SQL.Random(12, true);
                         SqlCommand testID = new SqlCommand($"SELECT UserID FROM Users WHERE UserID = @UserID;", SQL.conn);
-                        testID.Parameters.Add(new SqlParameter("@UserID", userData.userID));
+                        testID.Parameters.Add(new SqlParameter("@UserID", userData.UserID));
                         SQL.conn.Open();
                         if (testID.ExecuteScalar() == null)
                         {
@@ -65,14 +66,16 @@ namespace DatabaseTestAPI.Controllers
                         }
                     }
                     SqlCommand newUser = new SqlCommand($"INSERT INTO Users VALUES(@UserID, @UserName, @PassHash, @Salt);", SQL.conn);
-                    newUser.Parameters.Add(new SqlParameter("@UserID", userData.userID));
-                    newUser.Parameters.Add(new SqlParameter("@UserName", userData.username));
-                    newUser.Parameters.Add(new SqlParameter("@PassHash", userData.passHash));
-                    newUser.Parameters.Add(new SqlParameter("@Salt", userData.salt));
+                    newUser.Parameters.Add(new SqlParameter("@UserID", userData.UserID));
+                    newUser.Parameters.Add(new SqlParameter("@UserName", userData.Username));
+                    newUser.Parameters.Add(new SqlParameter("@PassHash", userData.PassHash));
+                    newUser.Parameters.Add(new SqlParameter("@Salt", userData.Salt));
 
                     SQL.conn.Open();
                     newUser.ExecuteNonQuery();
                     SQL.conn.Close();
+
+                    Response.StatusCode = 200;
                     return $"User {username} created";
                 }
             }
