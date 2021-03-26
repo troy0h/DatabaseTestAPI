@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Configuration;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 
@@ -12,6 +13,9 @@ namespace DatabaseTestAPI.Controllers
         [HttpPost]
         public string Post(string username, string password, string passConfirm)
         {
+            string connectionString = ConfigurationManager.ConnectionStrings["DB"].ConnectionString;
+            SqlConnection conn = new(connectionString);
+
             User userData = new();
             userData.Username = username;
             userData.Password = password;
@@ -37,11 +41,11 @@ namespace DatabaseTestAPI.Controllers
             }
             else
             {
-                SqlCommand testUser = new SqlCommand($"SELECT * FROM Users WHERE Username = @userName;", SQL.conn);
+                SqlCommand testUser = new SqlCommand($"SELECT * FROM Users WHERE Username = @userName;", conn);
                 testUser.Parameters.Add(new SqlParameter("@UserName", userData.Username));
-                SQL.conn.Open();
+                conn.Open();
                 object testUserResult = testUser.ExecuteScalar();
-                SQL.conn.Close();
+                conn.Close();
                 if (testUserResult != null)
                 {
                     Response.StatusCode = 400;
@@ -56,24 +60,24 @@ namespace DatabaseTestAPI.Controllers
                     while (idUnique == true)
                     {
                         userData.UserID = SQL.Random(12, true);
-                        SqlCommand testID = new SqlCommand($"SELECT UserID FROM Users WHERE UserID = @UserID;", SQL.conn);
+                        SqlCommand testID = new SqlCommand($"SELECT UserID FROM Users WHERE UserID = @UserID;", conn);
                         testID.Parameters.Add(new SqlParameter("@UserID", userData.UserID));
-                        SQL.conn.Open();
+                        conn.Open();
                         if (testID.ExecuteScalar() == null)
                         {
                             idUnique = false;
-                            SQL.conn.Close();
+                            conn.Close();
                         }
                     }
-                    SqlCommand newUser = new SqlCommand($"INSERT INTO Users VALUES(@UserID, @UserName, @PassHash, @Salt);", SQL.conn);
+                    SqlCommand newUser = new SqlCommand($"INSERT INTO Users VALUES(@UserID, @UserName, @PassHash, @Salt);", conn);
                     newUser.Parameters.Add(new SqlParameter("@UserID", userData.UserID));
                     newUser.Parameters.Add(new SqlParameter("@UserName", userData.Username));
                     newUser.Parameters.Add(new SqlParameter("@PassHash", userData.PassHash));
                     newUser.Parameters.Add(new SqlParameter("@Salt", userData.Salt));
 
-                    SQL.conn.Open();
+                    conn.Open();
                     newUser.ExecuteNonQuery();
-                    SQL.conn.Close();
+                    conn.Close();
 
                     Response.StatusCode = 200;
                     return $"User {username} created";

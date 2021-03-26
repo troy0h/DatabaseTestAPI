@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Configuration;
+using Microsoft.AspNetCore.Mvc;
 using System.Data.SqlClient;
 
 namespace DatabaseTestAPI.Controllers
@@ -11,6 +12,9 @@ namespace DatabaseTestAPI.Controllers
         [HttpGet]
         public string Get(string username, string password)
         {
+            string connectionString = ConfigurationManager.ConnectionStrings["DB"].ConnectionString;
+            SqlConnection conn = new(connectionString);
+
             User userData = new();
             userData.Username = username;
             userData.Password = password;
@@ -30,9 +34,9 @@ namespace DatabaseTestAPI.Controllers
             }
             else
             {
-                using SqlCommand findUser = new SqlCommand($"SELECT * FROM Users WHERE Username = @UserName;", SQL.conn);
+                using SqlCommand findUser = new SqlCommand($"SELECT * FROM Users WHERE Username = @UserName;", conn);
                 findUser.Parameters.Add(new SqlParameter("@UserName", userData.Username));
-                SQL.conn.Open();
+                conn.Open();
                 using SqlDataReader reader = findUser.ExecuteReader();
                 int count = reader.FieldCount;
                 while (reader.Read())
@@ -58,7 +62,7 @@ namespace DatabaseTestAPI.Controllers
                         }
                     }
                 }
-                SQL.conn.Close();
+                conn.Close();
 
                 if (userData.UserID == "")
                 {

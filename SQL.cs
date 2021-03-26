@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Security.Cryptography;
@@ -8,12 +9,6 @@ namespace DatabaseTestAPI
 {
     class SQL
     {
-        static readonly string ConnectionString =
-                        "Data Source=desktop-sa03gi7;" +
-                        "Initial Catalog=TestLogin;" +
-                        "Integrated Security=SSPI;";
-        public static SqlConnection conn = new SqlConnection(ConnectionString);
-
         public static string Sha256(string randomString)
         {
             // Encrypt given string to SHA256
